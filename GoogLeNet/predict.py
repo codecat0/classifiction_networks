@@ -1,7 +1,7 @@
 """
-@File : predict.py
-@Author : CodeCat
-@Time : 2021/7/8 下午7:56
+@File  : predict.py
+@Author: CodeCat
+@Time  : 2021/7/9 11:25
 """
 import os
 import json
@@ -11,7 +11,7 @@ from PIL import Image
 from torchvision import transforms
 import matplotlib.pyplot as plt
 
-from models.vit import vit_base_patch16_224_in21k
+from models.googlenet import get_googlenet
 
 
 def main():
@@ -40,9 +40,9 @@ def main():
     json_file = open(json_path, 'r')
     class_indict = json.load(json_file)
 
-    model = vit_base_patch16_224_in21k(num_classes=5, has_logits=False).to(device)
-    model_weight_path = "./weights/vit_base_patch16_224.pth"
-    model.load_state_dict(torch.load(model_weight_path, map_location=device))
+    model = get_googlenet(flag=False, num_classes=5)
+    model_weight_path = "./weights/googlenet.pth"
+    model.load_state_dict(torch.load(model_weight_path, map_location=device), strict=False)
     model.eval()
     with torch.no_grad():
         output = torch.squeeze(model(img.to(device))).cpu()

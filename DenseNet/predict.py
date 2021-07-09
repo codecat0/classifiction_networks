@@ -1,7 +1,7 @@
 """
-@File : predict.py
-@Author : CodeCat
-@Time : 2021/7/8 下午7:56
+@File  : predict.py
+@Author: CodeCat
+@Time  : 2021/7/9 11:38
 """
 import os
 import json
@@ -11,7 +11,7 @@ from PIL import Image
 from torchvision import transforms
 import matplotlib.pyplot as plt
 
-from models.vit import vit_base_patch16_224_in21k
+from models.densenet import get_densenet121
 
 
 def main():
@@ -40,8 +40,8 @@ def main():
     json_file = open(json_path, 'r')
     class_indict = json.load(json_file)
 
-    model = vit_base_patch16_224_in21k(num_classes=5, has_logits=False).to(device)
-    model_weight_path = "./weights/vit_base_patch16_224.pth"
+    model = get_densenet121(flag=False, num_classes=5)
+    model_weight_path = "./weights/dense121net.pth"
     model.load_state_dict(torch.load(model_weight_path, map_location=device))
     model.eval()
     with torch.no_grad():

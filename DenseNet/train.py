@@ -1,12 +1,12 @@
 """
-@File : train.py
-@Author : CodeCat
-@Time : 2021/7/8 下午5:50
+@File  : train.py
+@Author: CodeCat
+@Time  : 2021/7/9 11:37
 """
 import os
 import math
-import time
 import argparse
+import time
 
 import torch
 import torch.optim as optim
@@ -15,7 +15,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from utils.data_utils import get_dataset_dataloader
 from utils.train_val_utils import train_one_epoch, evaluate
-from models.vit import vit_base_patch16_224_in21k
+from models.densenet import get_densenet121
 
 
 def main(args):
@@ -30,49 +30,36 @@ def main(args):
     train_dataset, val_dataset, train_dataloader, val_dataloader = get_dataset_dataloader(args.data_path, args.batch_size)
 
     # 获取模型
-    model = vit_base_patch16_224_in21k(num_classes=args.num_classes, has_logits=False).to(device)
+    model = get_densenet121(args.flag, num_classes=args.num_classes)
 
-    if args.weights != "":
-        assert os.path.exists(args.weights), f"weights file: {args.weights} not exist."
-        weights_dict = torch.load(args.weights, map_location=device)
-        # 删除不需要的权重
-        del_keys = ['head.weight', 'head.bias'] if model.has_logits else \
-            ['pre_logits.fc.weight', 'pre_logits.fc.bias', 'head.weight', 'head.bias']
-
-        for k in del_keys:
-            del weights_dict[k]
-
-        model.load_state_dict(weights_dict, strict=False)
-
-    # 除head, pre_logits，其他权重全部冻结
-    if args.freeze_layers:
-        for name, parameter in model.named_parameters():
-            if "head" not in name and "pre_logits" not in name:
-                parameter.requires_grad_(False)
-
-    pg = [p for p in model.parameters() if p.requires_grad]
-    optimizer = optim.Adam(params=pg, lr=args.lr, betas=(0.9, 0.999), weight_decay=5E-5)
+    # 优化器
+    optimizer = optim.Adam(params=model.parameters(), lr=args.lr, betas=(0.9, 0.999), weight_decay=5E-5)
 
     # cosine
     lf = lambda x: ((1 + math.cos(x * math.pi / args.epochs)) / 2) * (1 - args.lrf) + args.lrf
     scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lf)
+    best_acc = 0.0
 
     start = time.time()
-    best_acc = 0.0
     for epoch in range(args.epochs):
         # train
-        train_loss, train_acc = train_one_epoch(model=model,
-                                                optimizer=optimizer,
-                                                dataloader=train_dataloader,
-                                                device=device,
-                                                epoch=epoch)
+        train_loss, train_acc = train_one_epoch(
+            model=model,
+            optimizer=optimizer,
+            dataloader=train_dataloader,
+            device=device,
+            epoch=epoch
+        )
+
         scheduler.step()
 
         # validate
-        val_loss, val_acc = evaluate(model=model,
-                                     dataloader=val_dataloader,
-                                     device=device,
-                                     epoch=epoch)
+        val_loss, val_acc = evaluate(
+            model=model,
+            dataloader=val_dataloader,
+            device=device,
+            epoch=epoch
+        )
 
         # tensorboard
         tags = ['train_loss', 'train_acc', 'val_loss', 'val_acc', 'learning_rate']
@@ -83,9 +70,9 @@ def main(args):
         tb_writer.add_scalar(tags[4], optimizer.param_groups[0]['lr'], epoch)
         if val_acc > best_acc:
             best_acc = val_acc
-            torch.save(model.state_dict(), "./weights/vit_base_patch16_224.pth")
+            torch.save(model.state_dict(), "./weights/dense121net.pth")
     end = time.time()
-    print("Training 耗时为: {:.1f}".format(end - start))
+    print("Training 耗时为:{:.1f}".format(end - start))
 
 
 if __name__ == '__main__':
@@ -96,8 +83,7 @@ if __name__ == '__main__':
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--lrf', type=float, default=0.01)
     parser.add_argument('--data_path', type=str, default='/data/flower_photos')
-    parser.add_argument('--weights', type=str, default='./vit_base_patch16_224_in21k.pth')
-    parser.add_argument('--freeze_layers', type=bool, default=True)
+    parser.add_argument('--flag', type=bool, default=False)
     parser.add_argument('--device', default='cuda:0')
 
     opt = parser.parse_args()
