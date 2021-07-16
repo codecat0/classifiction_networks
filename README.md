@@ -40,6 +40,10 @@ http://download.tensorflow.org/example_images/flower_photos.tgz
 - **VIT :**
 
 ### 4. 模型测试
+下图为`VIT`模型测试结果：
 ![](dulip_pre.png)
 ![](daisy_pre.png)
-![](roses_pre.png)
+![](roses_pre.png)】
+
+从第三张图，我们可以看出这个模型将`rose`识别为`tulip`，并且以`75.5%`的概率认定其为`tulip`，可以看出这个模型还有待改善。
+针对于`rose`和`tulip`这种相似图像的分类任务，可以采取`细粒度分类`
