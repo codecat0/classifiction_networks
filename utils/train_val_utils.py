@@ -31,6 +31,7 @@ def train_one_epoch(model, optimizer, dataloader, device, epoch):
         accu_num += torch.eq(pred_classes, labels.to(device)).sum()
 
         loss = loss_function(pred, labels.to(device))
+        loss.requires_grad_(True)
         loss.backward()
         accu_loss += loss.detach()
 
