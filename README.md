@@ -38,3 +38,8 @@ http://download.tensorflow.org/example_images/flower_photos.tgz
 - **ShuffleNet :**
 - **GhostNet :**
 - **VIT :**
+
+### 4. 模型测试
+![](dulip_pre.png)
+![](daisy_pre.png)
+![](roses_pre.png)
